@@ -2,7 +2,7 @@
 
 Pusat kendali API dan penyimpanan file untuk platform Jarchive (SIJA).
 
-##Persiapan Awal
+## Persiapan Awal
 1. Pastikan MongoDB sudah terinstall dan berjalan di port `27017`.
 2. Pastikan Node.js sudah terinstall.
 

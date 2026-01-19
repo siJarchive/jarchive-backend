@@ -1,0 +1,194 @@
+{
+	"info": {
+		"_postman_id": "jarchive-backend-id",
+		"name": "Jarchive API",
+		"description": "Dokumentasi API untuk Jarchive Backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login (Guru/Siswa)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"guru\",\n    \"password\": \"admin123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "login"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Assets (Files)",
+			"item": [
+				{
+					"name": "Get All Assets",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/assets?page=1&limit=10&sort=newest",
+							"host": ["{{base_url}}"],
+							"path": ["api", "assets"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "10" },
+								{ "key": "sort", "value": "newest" },
+								{ "key": "category", "value": "Docs", "disabled": true },
+								{ "key": "search", "value": "tugas", "disabled": true }
+							]
+						}
+					}
+				},
+				{
+					"name": "Upload Asset (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "file", "type": "file", "src": [] },
+								{ "key": "name", "value": "Modul TKJ", "type": "text" },
+								{ "key": "category", "value": "Docs", "type": "text" },
+								{ "key": "description", "value": "Modul belajar jaringan dasar", "type": "text" }
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/upload",
+							"host": ["{{base_url}}"],
+							"path": ["api", "upload"]
+						}
+					}
+				},
+				{
+					"name": "Delete Asset",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/assets/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "assets", ":id"],
+							"variable": [{ "key": "id", "value": "MASUKKAN_ID_DISINI" }]
+						}
+					}
+				},
+				{
+					"name": "Download File",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/download/:filename",
+							"host": ["{{base_url}}"],
+							"path": ["download", ":filename"],
+							"variable": [{ "key": "filename", "value": "namafile.pdf" }]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Requests (Siswa)",
+			"item": [
+				{
+					"name": "Send Request (Upload/Bug)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "type", "value": "upload", "type": "text" },
+								{ "key": "message", "value": "Pak saya mau kumpul tugas", "type": "text" },
+								{ "key": "file", "type": "file", "src": [] },
+								{ "key": "name", "value": "Tugas Akhir", "type": "text" },
+								{ "key": "category", "value": "Docs", "type": "text" }
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/requests",
+							"host": ["{{base_url}}"],
+							"path": ["api", "requests"]
+						}
+					}
+				},
+				{
+					"name": "Approve Request",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/requests/:id/approve",
+							"host": ["{{base_url}}"],
+							"path": ["api", "requests", ":id", "approve"],
+							"variable": [{ "key": "id", "value": "ID_REQUEST" }]
+						}
+					}
+				},
+				{
+					"name": "Reset All Requests",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/requests",
+							"host": ["{{base_url}}"],
+							"path": ["api", "requests"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Logs",
+			"item": [
+				{
+					"name": "Get Logs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/logs",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs"]
+						}
+					}
+				},
+				{
+					"name": "Clear Logs",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/logs",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000"
+		}
+	]
+}

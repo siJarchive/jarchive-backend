@@ -202,9 +202,12 @@ Mengunduh file (force download).
 
 ### 3. Static File Access
 
-Akses langsung ke file (misalnya untuk menampilkan gambar thumbnail).
+Akses langsung ke file. Browser akan otomatis menangani preview berdasarkan tipe file (MIME type).
 
 * **Endpoint:** `http://localhost:5000/uploads/:filename`
+* **Support Preview:** * Image (jpg, png, gif)
+    * Video (mp4, webm)
+    * Document (pdf - akan dirender oleh PDF viewer bawaan browser)
 
 ---
 

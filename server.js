@@ -10,9 +10,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Pastikan folder uploads tersedia
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
+// Route untuk serve file statis (untuk preview PDF dan Gambar)
 app.use('/uploads', express.static(uploadDir, { maxAge: '1d' }));
 
 const storage = multer.diskStorage({
@@ -21,11 +23,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+// Koneksi MongoDB
 mongoose.connect('mongodb://127.0.0.1:27017/jarchive')
   .then(() => console.log('MongoDB Connected'));
 
 // --- SCHEMAS ---
-
 const VersionSchema = new mongoose.Schema({
   filename: String,
   uploadDate: { type: Date, default: Date.now },
@@ -136,6 +138,8 @@ app.get('/api/assets', async (req, res) => {
 
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
+    if(!req.file) return res.status(400).json({error: "No file uploaded"});
+
     const asset = new Asset({
       name: req.body.name,
       category: req.body.category,
@@ -152,7 +156,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// UPDATE ASSET (METADATA + OPTIONAL FILE REPLACE)
+// UPDATE ASSET
 app.put('/api/assets/:id', upload.single('file'), async (req, res) => {
     try {
         const { name, description, category } = req.body;
@@ -162,9 +166,7 @@ app.put('/api/assets/:id', upload.single('file'), async (req, res) => {
         let updateData = { name, description, category };
         let pushData = {};
 
-        // Jika ada file baru yang diupload saat edit
         if (req.file) {
-             // 1. Arsipkan file lama ke versions
              pushData = {
                 versions: {
                     filename: asset.filename,
@@ -175,7 +177,6 @@ app.put('/api/assets/:id', upload.single('file'), async (req, res) => {
                 }
              };
 
-             // 2. Update data utama dengan file baru
              updateData.filename = req.file.filename;
              updateData.originalName = req.file.originalname;
              updateData.size = formatBytes(req.file.size);
@@ -183,14 +184,12 @@ app.put('/api/assets/:id', upload.single('file'), async (req, res) => {
              updateData.uploadDate = Date.now();
         }
 
-        // Lakukan update atomik
         const updateOperation = { $set: updateData };
         if (req.file) {
             updateOperation.$push = pushData;
         }
 
         await Asset.findByIdAndUpdate(req.params.id, updateOperation);
-        
         await Log.create({ action: 'update', detail: `Admin updated: ${name} ${req.file ? '(File Replaced)' : ''}` });
         res.json({ message: 'Updated successfully' });
     } catch(err) { res.status(500).json({ error: err.message }); }
@@ -291,7 +290,7 @@ app.post('/api/requests/:id/approve', async (req, res) => {
                 $push: { versions: { 
                     filename: oldAsset.filename, 
                     size: oldAsset.size, 
-                    sizeBytes: oldAsset.sizeBytes,
+                    sizeBytes: oldAsset.sizeBytes, 
                     uploadDate: oldAsset.uploadDate, 
                     versionNumber: oldAsset.versions.length + 1 
                 }} 

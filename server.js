@@ -117,7 +117,6 @@ app.post('/api/login', (req, res) => {
 // --- ROUTES: ASSETS ---
 app.get('/api/assets', async (req, res) => {
   try {
-    // Filter ukuran dihapus dari sini
     const { category, sort, page = 1, limit = 8, search } = req.query;
     let query = {};
     
@@ -153,6 +152,50 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// UPDATE ASSET (METADATA + OPTIONAL FILE REPLACE)
+app.put('/api/assets/:id', upload.single('file'), async (req, res) => {
+    try {
+        const { name, description, category } = req.body;
+        const asset = await Asset.findById(req.params.id);
+        if (!asset) return res.status(404).json({ error: 'Asset not found' });
+
+        let updateData = { name, description, category };
+        let pushData = {};
+
+        // Jika ada file baru yang diupload saat edit
+        if (req.file) {
+             // 1. Arsipkan file lama ke versions
+             pushData = {
+                versions: {
+                    filename: asset.filename,
+                    size: asset.size,
+                    sizeBytes: asset.sizeBytes,
+                    uploadDate: asset.uploadDate,
+                    versionNumber: asset.versions.length + 1
+                }
+             };
+
+             // 2. Update data utama dengan file baru
+             updateData.filename = req.file.filename;
+             updateData.originalName = req.file.originalname;
+             updateData.size = formatBytes(req.file.size);
+             updateData.sizeBytes = req.file.size;
+             updateData.uploadDate = Date.now();
+        }
+
+        // Lakukan update atomik
+        const updateOperation = { $set: updateData };
+        if (req.file) {
+            updateOperation.$push = pushData;
+        }
+
+        await Asset.findByIdAndUpdate(req.params.id, updateOperation);
+        
+        await Log.create({ action: 'update', detail: `Admin updated: ${name} ${req.file ? '(File Replaced)' : ''}` });
+        res.json({ message: 'Updated successfully' });
+    } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 app.delete('/api/assets/:id', async (req, res) => {
   const asset = await Asset.findById(req.params.id);
   if (asset) {
@@ -166,14 +209,6 @@ app.delete('/api/assets/:id', async (req, res) => {
   }
   await Asset.findByIdAndDelete(req.params.id);
   res.json({ message: 'Deleted' });
-});
-
-app.put('/api/assets/:id', async (req, res) => {
-    try {
-        const { name, description, category } = req.body;
-        await Asset.findByIdAndUpdate(req.params.id, { name, description, category });
-        res.json({ message: 'Updated' });
-    } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('/download/:filename', async (req, res) => {
@@ -216,10 +251,8 @@ app.get('/api/requests', async (req, res) => {
   res.json(requests);
 });
 
-// Endpoint untuk Reset Requests
 app.delete('/api/requests', async (req, res) => {
     try {
-        // Menghapus file temp jika ada request yang di-reset sebelum diapprove
         const pendingRequests = await Request.find({ status: 'pending' });
         pendingRequests.forEach(reqData => {
             if (reqData.tempFilename && fs.existsSync(path.join(uploadDir, reqData.tempFilename))) {
@@ -305,7 +338,6 @@ app.get('/api/logs', async (req, res) => {
   res.json(logs);
 });
 
-// Endpoint untuk Reset Logs
 app.delete('/api/logs', async (req, res) => {
     try {
         await Log.deleteMany({});

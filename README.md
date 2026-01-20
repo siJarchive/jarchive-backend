@@ -121,7 +121,8 @@ Mengubah metadata aset (bukan mengganti file).
 {
   "name": "Nama Baru",
   "description": "Deskripsi Baru",
-  "category": "Docs"
+  "category": "Docs",
+  "file": "File Baru"
 }
 
 ```

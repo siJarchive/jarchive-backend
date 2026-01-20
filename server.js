@@ -4,17 +4,19 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
+require('dotenv/config')
 
 const app = express();
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 app.use(cors());
 app.use(express.json());
 
-// Pastikan folder uploads tersedia
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
-// Route untuk serve file statis (untuk preview PDF dan Gambar)
 app.use('/uploads', express.static(uploadDir, { maxAge: '1d' }));
 
 const storage = multer.diskStorage({
@@ -23,11 +25,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Koneksi MongoDB
 mongoose.connect('mongodb://127.0.0.1:27017/jarchive')
   .then(() => console.log('MongoDB Connected'));
 
 // --- SCHEMAS ---
+
 const VersionSchema = new mongoose.Schema({
   filename: String,
   uploadDate: { type: Date, default: Date.now },
@@ -111,14 +113,32 @@ app.get('/stream/:filename', (req, res) => {
 // --- ROUTES: AUTH ---
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  if (username === 'guru' && password === 'admin123') return res.json({ role: 'admin' });
-  if (username === 'siswa' && password === 'jarchive') return res.json({ role: 'student' });
+  let isLogin = false;
+  let role = "";
+  
+  if (username === 'guru' && password === 'admin123') {
+    isLogin = true;
+    role = 'guru'
+  } else if (username === 'siswa' && password === 'jarchive') {
+    isLogin = true
+    role = 'siswa'
+  }
+
+  if (isLogin == true) {
+    const token = jwt.sign({
+      role: 'siswa'
+    }, JWT_SECRET,
+    {expiresIn: '24h'})
+
+    return res.json({ token });
+  }
   res.status(401).json({ error: 'Invalid credentials' });
 });
 
 // --- ROUTES: ASSETS ---
 app.get('/api/assets', async (req, res) => {
   try {
+    // Filter ukuran dihapus dari sini
     const { category, sort, page = 1, limit = 8, search } = req.query;
     let query = {};
     
@@ -138,8 +158,6 @@ app.get('/api/assets', async (req, res) => {
 
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
-    if(!req.file) return res.status(400).json({error: "No file uploaded"});
-
     const asset = new Asset({
       name: req.body.name,
       category: req.body.category,
@@ -156,45 +174,6 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// UPDATE ASSET
-app.put('/api/assets/:id', upload.single('file'), async (req, res) => {
-    try {
-        const { name, description, category } = req.body;
-        const asset = await Asset.findById(req.params.id);
-        if (!asset) return res.status(404).json({ error: 'Asset not found' });
-
-        let updateData = { name, description, category };
-        let pushData = {};
-
-        if (req.file) {
-             pushData = {
-                versions: {
-                    filename: asset.filename,
-                    size: asset.size,
-                    sizeBytes: asset.sizeBytes,
-                    uploadDate: asset.uploadDate,
-                    versionNumber: asset.versions.length + 1
-                }
-             };
-
-             updateData.filename = req.file.filename;
-             updateData.originalName = req.file.originalname;
-             updateData.size = formatBytes(req.file.size);
-             updateData.sizeBytes = req.file.size;
-             updateData.uploadDate = Date.now();
-        }
-
-        const updateOperation = { $set: updateData };
-        if (req.file) {
-            updateOperation.$push = pushData;
-        }
-
-        await Asset.findByIdAndUpdate(req.params.id, updateOperation);
-        await Log.create({ action: 'update', detail: `Admin updated: ${name} ${req.file ? '(File Replaced)' : ''}` });
-        res.json({ message: 'Updated successfully' });
-    } catch(err) { res.status(500).json({ error: err.message }); }
-});
-
 app.delete('/api/assets/:id', async (req, res) => {
   const asset = await Asset.findById(req.params.id);
   if (asset) {
@@ -208,6 +187,14 @@ app.delete('/api/assets/:id', async (req, res) => {
   }
   await Asset.findByIdAndDelete(req.params.id);
   res.json({ message: 'Deleted' });
+});
+
+app.put('/api/assets/:id', async (req, res) => {
+    try {
+        const { name, description, category } = req.body;
+        await Asset.findByIdAndUpdate(req.params.id, { name, description, category });
+        res.json({ message: 'Updated' });
+    } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('/download/:filename', async (req, res) => {
@@ -250,8 +237,10 @@ app.get('/api/requests', async (req, res) => {
   res.json(requests);
 });
 
+// Endpoint untuk Reset Requests
 app.delete('/api/requests', async (req, res) => {
     try {
+        // Menghapus file temp jika ada request yang di-reset sebelum diapprove
         const pendingRequests = await Request.find({ status: 'pending' });
         pendingRequests.forEach(reqData => {
             if (reqData.tempFilename && fs.existsSync(path.join(uploadDir, reqData.tempFilename))) {
@@ -290,7 +279,7 @@ app.post('/api/requests/:id/approve', async (req, res) => {
                 $push: { versions: { 
                     filename: oldAsset.filename, 
                     size: oldAsset.size, 
-                    sizeBytes: oldAsset.sizeBytes, 
+                    sizeBytes: oldAsset.sizeBytes,
                     uploadDate: oldAsset.uploadDate, 
                     versionNumber: oldAsset.versions.length + 1 
                 }} 
@@ -337,6 +326,7 @@ app.get('/api/logs', async (req, res) => {
   res.json(logs);
 });
 
+// Endpoint untuk Reset Logs
 app.delete('/api/logs', async (req, res) => {
     try {
         await Log.deleteMany({});

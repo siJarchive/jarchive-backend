@@ -126,7 +126,7 @@ app.post('/api/login', (req, res) => {
 
   if (isLogin == true) {
     const token = jwt.sign({
-      role: 'siswa'
+      role
     }, JWT_SECRET,
     {expiresIn: '24h'})
 
@@ -199,11 +199,28 @@ app.put('/api/assets/:id', async (req, res) => {
 
 app.get('/download/:filename', async (req, res) => {
   const filePath = path.join(uploadDir, req.params.filename);
+  const userRole = req.query.role || 'guest'; // Get role from query parameter
+  
   if (fs.existsSync(filePath)) {
-    const asset = await Asset.findOne({ filename: req.params.filename }) || await Asset.findOne({ "versions.filename": req.params.filename });
+    const asset = await Asset.findOne({ filename: req.params.filename }) || 
+                  await Asset.findOne({ "versions.filename": req.params.filename });
     const assetName = asset ? asset.name : req.params.filename;
     
-    await Log.create({ action: 'download', detail: `Downloaded: ${assetName}` });
+    // Create detailed log with user role information
+    let logDetail = '';
+    if (userRole === 'guru') {
+      logDetail = `Downloaded by Guru: ${assetName}`;
+    } else if (userRole === 'siswa') {
+      logDetail = `Downloaded by Siswa: ${assetName}`;
+    } else {
+      logDetail = `Downloaded: ${assetName}`;
+    }
+    
+    await Log.create({ 
+      action: 'download', 
+      detail: logDetail
+    });
+    
     res.download(filePath);
   } else {
     res.status(404).send('File not found');

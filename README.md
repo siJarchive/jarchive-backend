@@ -2,6 +2,17 @@
 
 Backend dibangun menggunakan **Node.js** dan **Express**, dengan database **MongoDB**. Sistem ini menangani manajemen aset digital, streaming video, dan sistem permintaan (request) upload dari siswa yang memerlukan persetujuan admin.
 
+## 📂 Struktur Proyek (Refactored)
+
+Backend ini menggunakan arsitektur MVC (Model-View-Controller) untuk skalabilitas.
+
+* **src/config**: Konfigurasi Database & Environment.
+* **src/controllers**: Logika bisnis (function) untuk setiap endpoint.
+* **src/models**: Skema Database MongoDB (Mongoose).
+* **src/routes**: Definisi Endpoint API (GET, POST, dll).
+* **src/utils**: Fungsi bantuan (format bytes, path folder).
+* **server.js**: Entry point untuk menjalankan server.
+
 ## 🛠️ Persiapan & Instalasi
 
 ### Prasyarat

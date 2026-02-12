@@ -4,7 +4,7 @@ const { uploadDir } = require('../utils/helper');
 
 exports.streamVideo = (req, res) => {
     const filePath = path.join(uploadDir, req.params.filename);
-    if (!fs.existsSync(filePath)) return res.status(404).send('File not found');
+    if (!fs.existsSync(filePath)) return res.status(404).send('Berkas tidak ditemukan');
 
     const stat = fs.statSync(filePath);
     const fileSize = stat.size;

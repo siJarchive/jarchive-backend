@@ -14,7 +14,7 @@ exports.createRequest = async (req, res) => {
             studentMessage: message,
             targetAssetId: targetAssetId || null,
             tempName: name || null,
-            tempCategory: category || 'Docs',
+            tempCategory: category || 'Dokumen',
             tempDescription: description || null,
             tempFilename: req.file ? req.file.filename : null,
             tempOriginalName: req.file ? req.file.originalname : null,
@@ -22,7 +22,7 @@ exports.createRequest = async (req, res) => {
             tempSizeBytes: req.file ? req.file.size : 0
         });
         await newReq.save();
-        res.json({ message: 'Request sent' });
+        res.json({ message: 'Permintaan dikirim' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
@@ -42,15 +42,15 @@ exports.clearRequests = async (req, res) => {
             }
         });
         await Request.deleteMany({});
-        await Log.create({ action: 'reset', detail: 'Admin cleared all requests' });
-        res.json({ message: 'All requests cleared' });
+        await Log.create({ action: 'reset', detail: 'Admin membersihkan semua permintaan' });
+        res.json({ message: 'Semua permintaan dibersihkan' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
 exports.approveRequest = async (req, res) => {
     try {
         const reqData = await Request.findById(req.params.id);
-        if (!reqData) return res.status(404).json({ error: 'Not found' });
+        if (!reqData) return res.status(404).json({ error: 'Tidak ditemukan' });
 
         if (reqData.type === 'upload') {
             const newAsset = new Asset({
@@ -63,7 +63,7 @@ exports.approveRequest = async (req, res) => {
                 sizeBytes: reqData.tempSizeBytes
             });
             await newAsset.save();
-            await Log.create({ action: 'approve', detail: `Approved New Upload: ${newAsset.name}` });
+            await Log.create({ action: 'approve', detail: `Menyetujui Unggahan Baru: ${newAsset.name}` });
 
         } else if (reqData.type === 'update') {
             const oldAsset = await Asset.findById(reqData.targetAssetId);
@@ -97,12 +97,12 @@ exports.approveRequest = async (req, res) => {
                 }
 
                 await Asset.findByIdAndUpdate(reqData.targetAssetId, updates);
-                await Log.create({ action: 'approve', detail: `Approved Update: ${updates.name}` });
+                await Log.create({ action: 'approve', detail: `Menyetujui Pembaruan: ${updates.name}` });
             }
         }
         reqData.status = 'approved';
         await reqData.save();
-        res.json({ message: 'Approved' });
+        res.json({ message: 'Disetujui' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
@@ -114,6 +114,6 @@ exports.rejectRequest = async (req, res) => {
         }
         reqData.status = 'rejected';
         await reqData.save();
-        res.json({ message: 'Rejected' });
+        res.json({ message: 'Ditolak' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };

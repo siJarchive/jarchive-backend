@@ -10,6 +10,6 @@ exports.getLogs = async (req, res) => {
 exports.clearLogs = async (req, res) => {
     try {
         await Log.deleteMany({});
-        res.json({ message: 'All logs cleared' });
+        res.json({ message: 'Semua log dibersihkan' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };

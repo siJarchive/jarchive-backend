@@ -9,10 +9,10 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 function formatBytes(bytes) {
-    if (!+bytes) return '0 Bytes';
+    if (!+bytes) return '0 Byte';
     const k = 1024;
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${['Bytes', 'KB', 'MB', 'GB'][i]}`;
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${['Byte', 'KB', 'MB', 'GB'][i]}`;
 }
 
 module.exports = { formatBytes, uploadDir };

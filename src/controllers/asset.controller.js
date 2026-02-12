@@ -36,7 +36,7 @@ exports.uploadAsset = async (req, res) => {
             versions: []
         });
         await asset.save();
-        await Log.create({ action: 'upload', detail: `Admin upload: ${asset.name}` });
+        await Log.create({ action: 'upload', detail: `Admin mengunggah: ${asset.name}` });
         res.json(asset);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -51,10 +51,10 @@ exports.deleteAsset = async (req, res) => {
                     if (fs.existsSync(path.join(uploadDir, v.filename))) fs.unlinkSync(path.join(uploadDir, v.filename));
                 });
             }
-            await Log.create({ action: 'delete', detail: `Admin delete: ${asset.name}` });
+            await Log.create({ action: 'delete', detail: `Admin menghapus: ${asset.name}` });
         }
         await Asset.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Deleted' });
+        res.json({ message: 'Dihapus' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
@@ -62,7 +62,7 @@ exports.updateAsset = async (req, res) => {
     try {
         const { name, description, category } = req.body;
         await Asset.findByIdAndUpdate(req.params.id, { name, description, category });
-        res.json({ message: 'Updated' });
+        res.json({ message: 'Diperbarui' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
@@ -76,14 +76,14 @@ exports.downloadAsset = async (req, res) => {
                 await Asset.findOne({ "versions.filename": req.params.filename });
             const assetName = asset ? asset.name : req.params.filename;
 
-            let logDetail = userRole === 'guru' ? `Downloaded by Guru: ${assetName}` :
-                            userRole === 'siswa' ? `Downloaded by Siswa: ${assetName}` :
-                            `Downloaded: ${assetName}`;
+            let logDetail = userRole === 'guru' ? `Diunduh oleh Guru: ${assetName}` :
+                            userRole === 'siswa' ? `Diunduh oleh Siswa: ${assetName}` :
+                            `Diunduh: ${assetName}`;
 
             await Log.create({ action: 'download', detail: logDetail });
             res.download(filePath);
         } else {
-            res.status(404).send('File not found');
+            res.status(404).send('Berkas tidak ditemukan');
         }
     } catch (err) { res.status(500).json({ error: err.message }); }
 };

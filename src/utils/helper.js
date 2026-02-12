@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const uploadDir = path.join(__dirname, '../../uploads');
 
-// Pastikan folder uploads ada saat aplikasi mulai
+// Pastikan folder uploads ada saat website sebelum dijalankan
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }

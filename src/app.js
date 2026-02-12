@@ -26,18 +26,11 @@ const streamRoutes = require('./routes/stream.routes');
 
 // Mount Routes
 app.use('/api', authRoutes);     // /api/login
-app.use('/api', assetRoutes);    // /api/assets, /api/upload (Note: /download is separate below)
+app.use('/api', assetRoutes);    // /api/assets, /api/upload (Note: /download terpisah dibawah)
 app.use('/api', requestRoutes);  // /api/requests
 app.use('/api', logRoutes);      // /api/logs
 app.use('/stream', streamRoutes); // /stream/:filename
 
-// Handle Special Routes that were not in /api in original code
-// Original: app.get('/download/:filename')
-// We put logic in assetController, but since it was not /api/download, we mount it manually or adjust the router.
-// Solution: The router 'assetRoutes' defines '/download/:filename'. 
-// But we mounted it on '/api'. This would make it '/api/download/:filename'.
-// ORIGINAL CODE was '/download/:filename'.
-// FIX: Mount specific download route separately to match frontend.
 const assetController = require('./controllers/asset.controller');
 app.get('/download/:filename', assetController.downloadAsset);
 

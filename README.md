@@ -42,6 +42,23 @@ node server.js
 
 ---
 
+## 🐳 Deployment dengan Docker (Disarankan)
+
+Cara termudah untuk menjalankan aplikasi ini (Backend, Frontend, dan Database) secara bersamaan adalah menggunakan Docker.
+
+### Prasyarat
+- [Docker](https://docs.docker.com/get-docker/) & Docker Compose terinstall di sistem.
+
+### Langkah Instalasi
+
+1. **Konfigurasi Environment**
+   Salin file `.env.example` menjadi `.env` di folder infrastruktur atau root proyek (sesuai struktur Anda). Sesuaikan variabel `VITE_API_URL` dengan IP komputer/server Anda (jangan gunakan `localhost` jika diakses dari device lain).
+
+2. **Jalankan Container**
+   Jalankan perintah berikut di terminal:
+   ```bash
+   docker compose up -d --build
+
 ## 🔐 Autentikasi (Authentication)
 
 Sistem menggunakan *hardcoded credentials* sederhana untuk membedakan role.

@@ -61,9 +61,55 @@ exports.deleteAsset = async (req, res) => {
 exports.updateAsset = async (req, res) => {
     try {
         const { name, description, category } = req.body;
-        await Asset.findByIdAndUpdate(req.params.id, { name, description, category });
-        res.json({ message: 'Diperbarui' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        const asset = await Asset.findById(req.params.id);
+
+        if (!asset) {
+            return res.status(404).json({ error: 'File tidak ditemukan' });
+        }
+
+        // 1. Update Metadata Dasar
+        asset.name = name || asset.name;
+        asset.description = description || asset.description;
+        asset.category = category || asset.category;
+
+        // 2. Cek apakah ada file baru yang diupload
+        if (req.file) {
+            // Simpan data file LAMA ke dalam array versions
+            const oldVersion = {
+                filename: asset.filename, // File lama
+                uploadDate: asset.uploadDate, // Tanggal upload lama
+                size: asset.size,
+                sizeBytes: asset.sizeBytes,
+                versionNumber: (asset.versions.length) + 1 // Versi 1, 2, dst
+            };
+
+            // Push ke array versions
+            asset.versions.push(oldVersion);
+
+            // Update aset utama dengan data file BARU
+            asset.filename = req.file.filename;
+            asset.originalName = req.file.originalname;
+            asset.size = formatBytes(req.file.size);
+            asset.sizeBytes = req.file.size;
+            asset.uploadDate = Date.now(); // Reset tanggal ke sekarang
+        }
+
+        await asset.save();
+        await Log.create({ 
+            action: 'update', 
+            detail: req.file 
+                ? `Admin memperbarui file & info: ${asset.name}` 
+                : `Admin memperbarui info: ${asset.name}` 
+        });
+
+        res.json({ message: 'File berhasil diperbarui', asset });
+    } catch (err) {
+        // Hapus file yang baru terupload jika database error (cleanup)
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+        res.status(500).json({ error: err.message });
+    }
 };
 
 exports.downloadAsset = async (req, res) => {
@@ -72,8 +118,10 @@ exports.downloadAsset = async (req, res) => {
         const userRole = req.query.role || 'guest';
 
         if (fs.existsSync(filePath)) {
+            // Cek di main asset ATAU di versions
             const asset = await Asset.findOne({ filename: req.params.filename }) ||
                 await Asset.findOne({ "versions.filename": req.params.filename });
+                
             const assetName = asset ? asset.name : req.params.filename;
 
             let logDetail = userRole === 'guru' ? `Diunduh oleh Guru: ${assetName}` :

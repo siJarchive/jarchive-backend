@@ -81,7 +81,10 @@ Mengembalikan peran (role) pengguna berdasarkan username dan password.
 
 * **Response (Sukses):**
 ```json
-{ "role": "admin" } // atau "student"
+{ 
+  "message": "Login berhasil",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // Berisi payload role
+}
 
 ```
 
@@ -106,7 +109,12 @@ Mengambil daftar aset dengan paginasi, pencarian, dan filter.
 * **Query Parameters (Opsional):**
 * `category`: Filter kategori (contoh: `Video`, `Docs`). Gunakan `All` untuk semua.
 * `search`: Mencari berdasarkan nama file (case-insensitive).
-* `sort`: `oldest` (terlama), `az` (alfabet), default adalah terbaru.
+* `sort`: 
+  * `oldest` (Terlama)
+  * `az` (A-Z)
+  * `size_desc` (Ukuran Terbesar - Baru ditambahkan)
+  * `size_asc` (Ukuran Terkecil - Baru ditambahkan)
+  * Default adalah terbaru.
 * `page`: Nomor halaman (default: 1).
 * `limit`: Item per halaman (default: 8).
 
@@ -140,17 +148,17 @@ Mengunggah file baru langsung ke sistem.
 
 ### 3. Update Asset Info
 
-Mengubah metadata aset (bukan mengganti file).
+Mengubah metadata aset dan/atau mengganti file utama. File lama akan otomatis masuk ke riwayat versi (Version History).
 
 * **Endpoint:** `PUT /api/assets/:id`
-* **Content-Type:** `application/json`
+* **Content-Type:** `multipart/form-data`
 * **Body:**
 ```json
 {
-  "name": "Nama Baru",
-  "description": "Deskripsi Baru",
-  "category": "Docs",
-  "file": "File Baru"
+  "name": "(String) Nama Baru (Opsional)",
+  "description": "(String) Deskripsi Baru (Opsional)",
+  "category": "(String) Kategori Baru (Opsional)",
+  "file": "(File Object) File pengganti (Opsional)"
 }
 
 ```
@@ -162,6 +170,15 @@ Mengubah metadata aset (bukan mengganti file).
 Menghapus aset dari database beserta file fisiknya (termasuk versi lama jika ada).
 
 * **Endpoint:** `DELETE /api/assets/:id`
+
+
+
+### 5. Delete Asset Version (Khusus Guru)
+
+Menghapus file fisik dan data riwayat dari versi lama secara spesifik.
+
+* **Endpoint:** `DELETE /api/assets/:id/versions/:versionId`
+* **Response:** `{ "message": "Riwayat versi berhasil dihapus" }`
 
 ---
 
@@ -224,9 +241,11 @@ Digunakan untuk memutar video (mendukung *range requests* agar bisa di-seek/dipe
 
 ### 2. Download File
 
-Mengunduh file (force download).
+Mengunduh file (force download) dan mencatat aktivitas ke Log.
 
 * **Endpoint:** `GET /download/:filename`
+* **Query Parameter:** `?role=guru` atau `?role=siswa` (Untuk keperluan Log History).
+* **Contoh:** `http://localhost:5000/download/170589123-file.pdf?role=guru`
 
 ### 3. Static File Access
 
@@ -267,7 +286,7 @@ Menghapus semua riwayat log.
 | `category` | String | Kategori (Docs, Video, dll). |
 | `filename` | String | Nama file fisik di folder uploads (timestamp-name). |
 | `originalName` | String | Nama asli file saat diupload user. |
-| `versions` | Array | Array object berisi riwayat versi file lama. |
+| `versions` | Array | Riwayat file lama. Berisi: `filename`, `uploadDate`, `size`, `sizeBytes`, dan `versionNumber`. |
 
 ### 2. `Request` (Koleksi Permintaan)
 

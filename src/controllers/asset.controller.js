@@ -15,6 +15,10 @@ exports.getAssets = async (req, res) => {
         let sortOption = { uploadDate: -1 };
         if (sort === 'oldest') sortOption = { uploadDate: 1 };
         if (sort === 'az') sortOption = { name: 1 };
+        
+        // TAMBAHKAN DUA BARIS INI UNTUK UKURAN
+        if (sort === 'size_desc') sortOption = { sizeBytes: -1 };
+        if (sort === 'size_asc') sortOption = { sizeBytes: 1 };
 
         const assets = await Asset.find(query).sort(sortOption).limit(limit * 1).skip((page - 1) * limit);
         const count = await Asset.countDocuments(query);
@@ -74,27 +78,34 @@ exports.updateAsset = async (req, res) => {
 
         // 2. Cek apakah ada file baru yang diupload
         if (req.file) {
+            // PASTIKAN asset.versions ADALAH ARRAY (Safety Check)
+            if (!asset.versions) {
+                asset.versions = [];
+            }
+
             // Simpan data file LAMA ke dalam array versions
             const oldVersion = {
-                filename: asset.filename, // File lama
-                uploadDate: asset.uploadDate, // Tanggal upload lama
+                filename: asset.filename, 
+                uploadDate: asset.uploadDate || Date.now(), 
                 size: asset.size,
                 sizeBytes: asset.sizeBytes,
-                versionNumber: (asset.versions.length) + 1 // Versi 1, 2, dst
+                versionNumber: asset.versions.length + 1 // Aman setelah check di atas
             };
 
-            // Push ke array versions
+            // Masukkan ke array versions
             asset.versions.push(oldVersion);
 
-            // Update aset utama dengan data file BARU
+            // Ganti data aset utama dengan file yang BARU
             asset.filename = req.file.filename;
             asset.originalName = req.file.originalname;
             asset.size = formatBytes(req.file.size);
             asset.sizeBytes = req.file.size;
-            asset.uploadDate = Date.now(); // Reset tanggal ke sekarang
+            asset.uploadDate = Date.now(); 
         }
 
         await asset.save();
+        
+        // Log aktivitas
         await Log.create({ 
             action: 'update', 
             detail: req.file 
@@ -104,7 +115,7 @@ exports.updateAsset = async (req, res) => {
 
         res.json({ message: 'File berhasil diperbarui', asset });
     } catch (err) {
-        // Hapus file yang baru terupload jika database error (cleanup)
+        // Pembersihan file jika terjadi error saat simpan ke database
         if (req.file && fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
         }
@@ -134,4 +145,37 @@ exports.downloadAsset = async (req, res) => {
             res.status(404).send('Berkas tidak ditemukan');
         }
     } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+exports.deleteVersion = async (req, res) => {
+    try {
+        const { id, versionId } = req.params;
+        const asset = await Asset.findById(id);
+        if (!asset) return res.status(404).json({ error: 'Aset tidak ditemukan' });
+
+        // Cari index versi yang akan dihapus
+        const versionIndex = asset.versions.findIndex(v => v._id.toString() === versionId);
+        if (versionIndex === -1) return res.status(404).json({ error: 'Versi tidak ditemukan' });
+
+        const version = asset.versions[versionIndex];
+        const filePath = path.join(uploadDir, version.filename);
+
+        // Hapus file fisik jika ada
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        // Hapus dari array versions
+        asset.versions.splice(versionIndex, 1);
+        await asset.save();
+        
+        await Log.create({ 
+            action: 'delete_version', 
+            detail: `Admin menghapus versi ${version.versionNumber} dari file: ${asset.name}` 
+        });
+
+        res.json({ message: 'Riwayat versi berhasil dihapus' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };

@@ -89,7 +89,8 @@ Mengembalikan peran (role) pengguna berdasarkan username dan password.
 ```
 
 
-* **Kredensial Default (Dapat diubah di .env jarchive-infrastructure):**
+Kredensial Default (Dapat diubah di .env jarchive-infrastructure):
+
 * **Admin:** Sesuai variabel `ADMIN_USER` & `ADMIN_PASS`
 * **Siswa:** Sesuao variabel `SISWA_USER` & `SISWA_PASS`
 

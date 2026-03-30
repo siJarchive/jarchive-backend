@@ -25,7 +25,7 @@ Backend ini menggunakan arsitektur MVC (Model-View-Controller) untuk skalabilita
 Pastikan file `package.json` ada, lalu jalankan:
 
 ```bash
-npm install express mongoose cors multer
+npm install express mongoose cors multer dotenv helmet express-rate-limit
 
 ```
 
@@ -42,7 +42,7 @@ node server.js
 
 ---
 
-## 🐳 Deployment dengan Docker (Disarankan)
+## 🐳 Deployment dengan Docker
 
 Cara termudah untuk menjalankan aplikasi ini (Backend, Frontend, dan Database) secara bersamaan adalah menggunakan Docker.
 
@@ -61,7 +61,7 @@ Cara termudah untuk menjalankan aplikasi ini (Backend, Frontend, dan Database) s
 
 ## 🔐 Autentikasi (Authentication)
 
-Sistem menggunakan *hardcoded credentials* sederhana untuk membedakan role.
+Sistem menggunakan JSON Web Token (JWT) untuk autentikasi. Kredensial pengguna kini **tidak lagi di-hardcode** di dalam kode, melainkan dibaca secara aman melalui *Environment Variables* (`.env`).
 
 ### 1. Login
 
@@ -89,11 +89,17 @@ Mengembalikan peran (role) pengguna berdasarkan username dan password.
 ```
 
 
-* **Kredensial Default:**
-* **Admin:** `username: guru`, `password: admin123`
-* **Siswa:** `username: siswa`, `password: jarchive`
+* **Kredensial Default (Dapat diubah di .env jarchive-infrastructure):**
+* **Admin:** Sesuai variabel `ADMIN_USER` & `ADMIN_PASS`
+* **Siswa:** Sesuao variabel `SISWA_USER` & `SISWA_PASS`
 
 
+
+## 🛡️ Keamanan (Security Middleware)
+
+Backend ini telah dilengkapi dengan standar keamanan dasar:
+* **Helmet:** Mengamankan aplikasi Express dengan mengatur berbagai HTTP headers.
+* **Rate Limiting:** Membatasi request dari satu IP (maksimal 100 request per 15 menit) pada endpoint `/api` untuk mencegah serangan *brute-force* dan DDoS ringan.
 
 ---
 

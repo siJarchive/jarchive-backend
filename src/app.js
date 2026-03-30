@@ -1,17 +1,26 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet'); 
+const rateLimit = require('express-rate-limit'); 
 const { uploadDir } = require('./utils/helper');
 require('dotenv').config();
 
-// Connect DB
 const connectDB = require('./config/db');
 connectDB();
 
 const app = express();
 
-// Middleware
 app.use(cors());
+app.use(helmet()); 
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, 
+    max: 100, 
+    message: 'Terlalu banyak request dari IP ini, coba lagi nanti.'
+});
+
+app.use('/api', limiter);
 app.use(express.json());
 
 // Static Folder

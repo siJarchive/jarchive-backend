@@ -12,7 +12,21 @@ connectDB();
 const app = express();
 
 app.use(cors());
-app.use(helmet()); 
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: { policy: "unsafe-none" },
+
+    xFrameOptions: false, 
+    
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "frame-ancestors": ["'self'", "*"], 
+            "img-src": ["'self'", "data:", "*"],
+            "media-src": ["'self'", "*"],
+        },
+    },
+}));
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, 

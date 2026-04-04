@@ -8,15 +8,12 @@ exports.getAssets = async (req, res) => {
     try {
         const { category, sort, page = 1, limit = 8, search } = req.query;
         let query = {};
-
         if (category && category !== 'All') query.category = category;
         if (search) query.name = { $regex: search, $options: 'i' };
 
         let sortOption = { uploadDate: -1 };
         if (sort === 'oldest') sortOption = { uploadDate: 1 };
         if (sort === 'az') sortOption = { name: 1 };
-        
-        // TAMBAHKAN DUA BARIS INI UNTUK UKURAN
         if (sort === 'size_desc') sortOption = { sizeBytes: -1 };
         if (sort === 'size_asc') sortOption = { sizeBytes: 1 };
 
@@ -71,19 +68,15 @@ exports.updateAsset = async (req, res) => {
             return res.status(404).json({ error: 'File tidak ditemukan' });
         }
 
-        // 1. Update Metadata Dasar
         asset.name = name || asset.name;
         asset.description = description || asset.description;
         asset.category = category || asset.category;
 
-        // 2. Cek apakah ada file baru yang diupload
         if (req.file) {
-            // PASTIKAN asset.versions ADALAH ARRAY (Safety Check)
             if (!asset.versions) {
                 asset.versions = [];
             }
 
-            // Simpan data file LAMA ke dalam array versions
             const oldVersion = {
                 filename: asset.filename, 
                 uploadDate: asset.uploadDate || Date.now(), 
@@ -92,10 +85,7 @@ exports.updateAsset = async (req, res) => {
                 versionNumber: asset.versions.length + 1 // Aman setelah check di atas
             };
 
-            // Masukkan ke array versions
             asset.versions.push(oldVersion);
-
-            // Ganti data aset utama dengan file yang BARU
             asset.filename = req.file.filename;
             asset.originalName = req.file.originalname;
             asset.size = formatBytes(req.file.size);
@@ -104,8 +94,6 @@ exports.updateAsset = async (req, res) => {
         }
 
         await asset.save();
-        
-        // Log aktivitas
         await Log.create({ 
             action: 'update', 
             detail: req.file 
@@ -115,7 +103,6 @@ exports.updateAsset = async (req, res) => {
 
         res.json({ message: 'File berhasil diperbarui', asset });
     } catch (err) {
-        // Pembersihan file jika terjadi error saat simpan ke database
         if (req.file && fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
         }
@@ -129,7 +116,6 @@ exports.downloadAsset = async (req, res) => {
         const userRole = req.query.role || 'guest';
 
         if (fs.existsSync(filePath)) {
-            // Cek di main asset ATAU di versions
             const asset = await Asset.findOne({ filename: req.params.filename }) ||
                 await Asset.findOne({ "versions.filename": req.params.filename });
                 
@@ -153,19 +139,16 @@ exports.deleteVersion = async (req, res) => {
         const asset = await Asset.findById(id);
         if (!asset) return res.status(404).json({ error: 'Aset tidak ditemukan' });
 
-        // Cari index versi yang akan dihapus
         const versionIndex = asset.versions.findIndex(v => v._id.toString() === versionId);
         if (versionIndex === -1) return res.status(404).json({ error: 'Versi tidak ditemukan' });
 
         const version = asset.versions[versionIndex];
         const filePath = path.join(uploadDir, version.filename);
 
-        // Hapus file fisik jika ada
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
         }
 
-        // Hapus dari array versions
         asset.versions.splice(versionIndex, 1);
         await asset.save();
         

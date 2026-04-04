@@ -82,7 +82,7 @@ exports.updateAsset = async (req, res) => {
                 uploadDate: asset.uploadDate || Date.now(), 
                 size: asset.size,
                 sizeBytes: asset.sizeBytes,
-                versionNumber: asset.versions.length + 1 // Aman setelah check di atas
+                versionNumber: asset.versions.length + 1
             };
 
             asset.versions.push(oldVersion);

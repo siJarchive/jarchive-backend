@@ -28,9 +28,52 @@ exports.createRequest = async (req, res) => {
 
 exports.getRequests = async (req, res) => {
     try {
-        const requests = await Request.find().sort({ date: -1 }).populate('targetAssetId');
-        res.json(requests);
+        const { status, page = 1, limit = 20 } = req.query;
+        
+        let query = {};
+        if (status && status !== 'all') {
+            query.status = status;
+        }
+
+        const skip = (page - 1) * limit;
+
+        const requests = await Request.find(query)
+            .sort({ date: -1 })
+            .populate('targetAssetId')
+            .skip(skip)
+            .limit(parseInt(limit));
+            
+        const totalRequests = await Request.countDocuments(query);
+
+        res.json({
+            requests,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalRequests / limit),
+            totalRequests
+        });
     } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+exports.getRequestStats = async (req, res) => {
+    try {
+        const stats = await Request.aggregate([
+            {
+                $group: {
+                    _id: "$status",
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const formattedStats = stats.reduce((acc, curr) => {
+            acc[curr._id] = curr.count;
+            return acc;
+        }, {});
+
+        res.json(formattedStats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
 exports.clearRequests = async (req, res) => {

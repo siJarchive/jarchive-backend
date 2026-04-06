@@ -14,8 +14,8 @@ const app = express();
 app.use(cors());
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    crossOriginOpenerPolicy: { policy: "unsafe-none" },
-
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    hsts: true, 
     xFrameOptions: false, 
     
     contentSecurityPolicy: {

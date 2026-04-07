@@ -110,6 +110,14 @@ exports.approveRequest = async (req, res) => {
 
         } else if (reqData.type === 'update') {
             const oldAsset = await Asset.findById(reqData.targetAssetId);
+
+            if (!oldAsset) {
+                if (reqData.tempFilename && fs.existsSync(path.join(uploadDir, reqData.tempFilename))) {
+                    fs.unlinkSync(path.join(uploadDir, reqData.tempFilename));
+                }
+                return res.status(400).json({ error: 'Gagal disetujui: Asset asli sudah tidak ada/dihapus.' });
+            }
+
             if (oldAsset) {
                 if (reqData.tempFilename) {
                     await Asset.findByIdAndUpdate(reqData.targetAssetId, {

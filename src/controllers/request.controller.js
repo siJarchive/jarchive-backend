@@ -35,23 +35,27 @@ exports.getRequests = async (req, res) => {
             query.status = status;
         }
 
-        const skip = (page - 1) * limit;
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 20;
+        const skip = (pageNum - 1) * limitNum;
 
         const requests = await Request.find(query)
-            .sort({ date: -1 })
+            .sort({ date: -1, _id: -1 })
             .populate('targetAssetId')
             .skip(skip)
-            .limit(parseInt(limit));
+            .limit(limitNum);
             
         const totalRequests = await Request.countDocuments(query);
 
         res.json({
             requests,
-            currentPage: parseInt(page),
-            totalPages: Math.ceil(totalRequests / limit),
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalRequests / limitNum),
             totalRequests
         });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { 
+        res.status(500).json({ error: err.message }); 
+    }
 };
 
 exports.getRequestStats = async (req, res) => {

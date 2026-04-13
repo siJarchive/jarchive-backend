@@ -9,19 +9,21 @@ exports.getLogs = async (req, res) => {
             query.action = action;
         }
 
-        const skip = (page - 1) * limit;
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 20;
+        const skip = (pageNum - 1) * limitNum;
 
         const logs = await Log.find(query)
-            .sort({ date: -1 })
+            .sort({ date: -1, _id: -1 }) 
             .skip(skip)
-            .limit(parseInt(limit));
+            .limit(limitNum);
             
         const totalLogs = await Log.countDocuments(query);
 
         res.json({
             logs,
-            currentPage: parseInt(page),
-            totalPages: Math.ceil(totalLogs / limit),
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalLogs / limitNum),
             totalLogs
         });
     } catch (err) { 

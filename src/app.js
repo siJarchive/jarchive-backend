@@ -13,7 +13,7 @@ const app = express();
 
 app.set('trust proxy', 1);
 app.use(cors({
-    origin: '0.0.0.0'
+    origin: '*'
 }));
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },

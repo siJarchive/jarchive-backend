@@ -1,289 +1,73 @@
-# 📚 Dokumentasi API Backend JArchive
+# Dokumentasi API Backend JArchive
 
-Backend dibangun menggunakan **Node.js** dan **Express**, dengan database **MongoDB**. Sistem ini menangani manajemen aset digital, streaming video, dan sistem permintaan (request) upload dari siswa yang memerlukan persetujuan admin.
+Backend ini berfungsi sebagai layanan pemrosesan data, manajemen file, dan streaming untuk platform JArchive. Dibangun menggunakan Node.js, Express, dan MongoDB dengan arsitektur MVC (Model-View-Controller).
 
-## 📂 Struktur Proyek (Refactored)
+## Struktur Direktori
 
-Backend ini menggunakan arsitektur MVC (Model-View-Controller) untuk skalabilitas.
+* **src/config**: Konfigurasi koneksi database Mongoose.
+* **src/controllers**: Logika utama penanganan request API.
+* **src/models**: Definisi skema data untuk MongoDB.
+* **src/routes**: Definisi jalur endpoint API.
+* **src/middleware**: Penanganan upload file menggunakan Multer.
+* **src/utils**: Fungsi pembantu seperti manajemen folder dan format data.
+* **server.js**: File utama untuk menjalankan aplikasi.
 
-* **src/config**: Konfigurasi Database & Environment.
-* **src/controllers**: Logika bisnis (function) untuk setiap endpoint.
-* **src/models**: Skema Database MongoDB (Mongoose).
-* **src/routes**: Definisi Endpoint API (GET, POST, dll).
-* **src/utils**: Fungsi bantuan (format bytes, path folder).
-* **server.js**: Entry point untuk menjalankan server.
+## Variabel Lingkungan (.env)
 
-## 🛠️ Persiapan & Instalasi
+Konfigurasi backend bergantung pada variabel berikut yang didefinisikan dalam file `.env` di folder infrastruktur:
 
-### Prasyarat
+* **BACKEND_PORT**: Port internal (default: 5000).
+* **MONGO_URI**: String koneksi database (contoh: `mongodb://root:password@mongo:27017/jarchive?authSource=admin`).
+* **JWT_SECRET**: Kunci rahasia untuk tanda tangan token keamanan.
+* **ADMIN_USER / ADMIN_PASS**: Kredensial untuk akses akun Guru.
+* **SISWA_USER / SISWA_PASS**: Kredensial untuk akses akun Siswa.
 
-1. **Node.js** terinstall di komputer.
-2. **MongoDB** berjalan secara lokal di port `27017`.
+## Instalasi dan Menjalankan Aplikasi
 
-### Instalasi Dependensi
-
-Pastikan file `package.json` ada, lalu jalankan:
-
+### Melalui Docker (Rekomendasi)
+Backend ini dikonfigurasi untuk berjalan di dalam container melalui `docker-compose.yml` pada folder infrastruktur.
+1. Pindah ke folder infrastruktur.
+2. Jalankan perintah:
 ```bash
-npm install express mongoose cors multer dotenv helmet express-rate-limit
-
+docker compose up -d --build
 ```
 
-### Menjalankan Server
-
+### Melalui Node.js Lokal
+1. Instal dependensi:
 ```bash
-node server.js
-
+npm install
+```
+2. Jalankan server:
+```bash
+npm start
 ```
 
-* **Base URL:** `http://localhost:5000`
-* **Database:** `mongodb://127.0.0.1:27017/jarchive`
-* **Folder Upload:** `./uploads` (Dibuat otomatis jika belum ada)
-
----
-
-## 🐳 Deployment dengan Docker
-
-Cara termudah untuk menjalankan aplikasi ini (Backend, Frontend, dan Database) secara bersamaan adalah menggunakan Docker.
-
-### Prasyarat
-- [Docker](https://docs.docker.com/get-docker/) & Docker Compose terinstall di sistem.
-
-### Langkah Instalasi
-
-1. **Konfigurasi Environment**
-   Salin file `.env.example` menjadi `.env` di folder infrastruktur atau root proyek (sesuai struktur Anda). Sesuaikan variabel `VITE_API_URL` dengan IP komputer/server Anda (jangan gunakan `localhost` jika diakses dari device lain).
-
-2. **Jalankan Container**
-   Jalankan perintah berikut di terminal:
-   ```bash
-   docker compose up -d --build
-
-## 🔐 Autentikasi (Authentication)
-
-Sistem menggunakan JSON Web Token (JWT) untuk autentikasi. Kredensial pengguna kini **tidak lagi di-hardcode** di dalam kode, melainkan dibaca secara aman melalui *Environment Variables* (`.env`).
-
-### 1. Login
-
-Mengembalikan peran (role) pengguna berdasarkan username dan password.
-
-* **Endpoint:** `POST /api/login`
-* **Content-Type:** `application/json`
-* **Body:**
-```json
-{
-  "username": "guru",
-  "password": "admin123"
-}
-
-```
-
-
-* **Response (Sukses):**
-```json
-{ 
-  "message": "Login berhasil",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // Berisi payload role
-}
-
-```
-
-
-Kredensial Default (Dapat diubah di .env jarchive-infrastructure):
-
-* **Admin:** Sesuai variabel `ADMIN_USER` & `ADMIN_PASS`
-* **Siswa:** Sesuao variabel `SISWA_USER` & `SISWA_PASS`
-
-
-
-## 🛡️ Keamanan (Security Middleware)
-
-Backend ini telah dilengkapi dengan standar keamanan dasar:
-* **Helmet:** Mengamankan aplikasi Express dengan mengatur berbagai HTTP headers.
-* **Rate Limiting:** Membatasi request dari satu IP (maksimal 100 request per 15 menit) pada endpoint `/api` untuk mencegah serangan *brute-force* dan DDoS ringan.
-
----
-
-## 📂 Manajemen Aset (Assets)
-
-Endpoint ini digunakan oleh Admin untuk mengelola file utama.
-
-### 1. Get All Assets (Filter & Search)
-
-Mengambil daftar aset dengan paginasi, pencarian, dan filter.
-
-* **Endpoint:** `GET /api/assets`
-* **Query Parameters (Opsional):**
-* `category`: Filter kategori (contoh: `Video`, `Docs`). Gunakan `All` untuk semua.
-* `search`: Mencari berdasarkan nama file (case-insensitive).
-* `sort`: 
-  * `oldest` (Terlama)
-  * `az` (A-Z)
-  * `size_desc` (Ukuran Terbesar - Baru ditambahkan)
-  * `size_asc` (Ukuran Terkecil - Baru ditambahkan)
-  * Default adalah terbaru.
-* `page`: Nomor halaman (default: 1).
-* `limit`: Item per halaman (default: 8).
-
-
-* **Response:**
-```json
-{
-  "assets": [ ... ],
-  "totalPages": 5,
-  "currentPage": 1
-}
-
-```
-
-
-
-### 2. Upload Asset (Admin)
-
-Mengunggah file baru langsung ke sistem.
-
-* **Endpoint:** `POST /api/upload`
-* **Content-Type:** `multipart/form-data`
-* **Body (Form-Data):**
-* `file`: (File Object)
-* `name`: (String) Nama tampilan aset
-* `category`: (String) Kategori
-* `description`: (String) Deskripsi
-
-
-* **Response:** Object aset yang baru dibuat.
-
-### 3. Update Asset Info
-
-Mengubah metadata aset dan/atau mengganti file utama. File lama akan otomatis masuk ke riwayat versi (Version History).
-
-* **Endpoint:** `PUT /api/assets/:id`
-* **Content-Type:** `multipart/form-data`
-* **Body:**
-```json
-{
-  "name": "(String) Nama Baru (Opsional)",
-  "description": "(String) Deskripsi Baru (Opsional)",
-  "category": "(String) Kategori Baru (Opsional)",
-  "file": "(File Object) File pengganti (Opsional)"
-}
-
-```
-
-
-
-### 4. Delete Asset
-
-Menghapus aset dari database beserta file fisiknya (termasuk versi lama jika ada).
-
-* **Endpoint:** `DELETE /api/assets/:id`
-
-
-
-### 5. Delete Asset Version (Khusus Guru)
-
-Menghapus file fisik dan data riwayat dari versi lama secara spesifik.
-
-* **Endpoint:** `DELETE /api/assets/:id/versions/:versionId`
-* **Response:** `{ "message": "Riwayat versi berhasil dihapus" }`
-
----
-
-## 🙋‍♂️ Sistem Request (Siswa & Approval)
-
-Siswa tidak bisa upload langsung. Mereka mengirim "Request". Admin (Guru) harus menyetujui (Approve) request tersebut agar menjadi Aset.
-
-### 1. Kirim Request (Siswa)
-
-Mengajukan upload baru atau update revisi file.
-
-* **Endpoint:** `POST /api/requests`
-* **Content-Type:** `multipart/form-data`
-* **Body (Form-Data):**
-* `type`: `upload` (untuk file baru) atau `update` (untuk revisi file lama).
-* `message`: Pesan dari siswa.
-* `file`: (File Object)
-* `name`: Nama file (jika type upload).
-* `category`: Kategori (jika type upload).
-* `targetAssetId`: ID Aset (Wajib jika type `update`).
-
-
-
-### 2. Get All Requests (Admin)
-
-Melihat daftar request yang masuk.
-
-* **Endpoint:** `GET /api/requests`
-
-### 3. Approve Request (Admin)
-
-Menyetujui request.
-
-* Jika tipe **upload**: File request dipindahkan menjadi Asset baru.
-* Jika tipe **update**: File aset lama disimpan ke *version history*, dan file baru menggantikannya.
-* **Endpoint:** `POST /api/requests/:id/approve`
-
-### 4. Reject Request (Admin)
-
-Menolak request dan menghapus file sementara yang diupload siswa.
-
-* **Endpoint:** `POST /api/requests/:id/reject`
-
-### 5. Reset All Requests
-
-Menghapus semua data request dan file sementara yang terkait.
-
-* **Endpoint:** `DELETE /api/requests`
-
----
-
-## 📺 File Serving & Streaming
-
-### 1. Video Streaming
-
-Digunakan untuk memutar video (mendukung *range requests* agar bisa di-seek/dipercepat).
-
-* **Endpoint:** `GET /stream/:filename`
-* **Contoh:** `http://localhost:5000/stream/170589123-video.mp4`
-
-### 2. Download File
-
-Mengunduh file (force download) dan mencatat aktivitas ke Log.
-
-* **Endpoint:** `GET /download/:filename`
-* **Query Parameter:** `?role=guru` atau `?role=siswa` (Untuk keperluan Log History).
-* **Contoh:** `http://localhost:5000/download/170589123-file.pdf?role=guru`
-
-### 3. Static File Access
-
-Akses langsung ke file. Browser akan otomatis menangani preview berdasarkan tipe file (MIME type).
-
-* **Endpoint:** `http://localhost:5000/uploads/:filename`
-* **Support Preview:** * Image (jpg, png, gif)
-    * Video (mp4, webm)
-    * Document (pdf - akan dirender oleh PDF viewer bawaan browser)
-
----
-
-## 📜 Logs (Audit Trail)
-
-Mencatat aktivitas sistem (Upload, Delete, Download, Approve, Reset).
-
-### 1. Get Logs
-
-Mengambil 50 log aktivitas terakhir.
-
-* **Endpoint:** `GET /api/logs`
-
-### 2. Clear Logs
-
-Menghapus semua riwayat log.
-
-* **Endpoint:** `DELETE /api/logs`
-
----
-
-## 🗄️ Skema Database (Mongoose Models)
+## Daftar Endpoint API
+
+### Autentikasi
+* **POST /api/login**: Melakukan verifikasi kredensial dan mengembalikan JWT.
+
+### Manajemen Aset
+* **GET /api/assets**: Mengambil daftar aset dengan dukungan filter kategori, pencarian, dan paginasi.
+* **POST /api/upload**: Mengunggah aset baru (Khusus Admin/Guru).
+* **PUT /api/assets/:id**: Memperbarui metadata atau mengganti file aset. File lama akan dipindahkan ke riwayat versi.
+* **DELETE /api/assets/:id**: Menghapus aset secara permanen dari database dan penyimpanan fisik.
+* **DELETE /api/assets/:id/versions/:versionId**: Menghapus versi lama tertentu dari riwayat aset.
+
+### Sistem Permintaan (Request)
+* **POST /api/requests**: Siswa mengirim permintaan upload atau update file.
+* **GET /api/requests**: Admin melihat daftar permintaan yang masuk.
+* **POST /api/requests/:id/approve**: Admin menyetujui permintaan. File dipindahkan dari folder sementara ke folder aset utama.
+* **POST /api/requests/:id/reject**: Admin menolak permintaan dan menghapus file terkait.
+* **DELETE /api/requests**: Menghapus seluruh data permintaan.
+
+### Layanan File dan Log
+* **GET /stream/:filename**: Melakukan streaming file video dengan dukungan range request.
+* **GET /download/:filename**: Mengunduh file dan mencatat aktivitas pengunduhan ke dalam log.
+* **GET /api/logs**: Mengambil riwayat aktivitas sistem.
+* **DELETE /api/logs**: Membersihkan seluruh data log aktivitas.
+
+## Skema Database
 
 ### 1. `Asset` (Koleksi Aset Utama)
 

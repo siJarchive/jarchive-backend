@@ -27,12 +27,12 @@ Backend ini mengimplementasikan pola arsitektur Model-View-Controller (MVC) murn
 
 ```text
 +----------------+      +-------------------+      +------------------+
-|   Client       | <--> |   Routes (API)    | <--> |   Controllers    |
+|     Client     | <--> |    Routes (API)   | <--> |    Controllers   |
 +----------------+      +-------------------+      +------------------+
                                                              |
                                                              v
                                                    +------------------+
-                                                   |     Models       |
+                                                   |      Models      |
                                                    |  (Mongoose ORM)  |
                                                    +------------------+
                                                              |

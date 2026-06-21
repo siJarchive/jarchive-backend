@@ -1,98 +1,170 @@
-# Dokumentasi API Backend JArchive
+<div align="center">
+  <h1>Jarchive Backend</h1>
+  <p>Layanan pemrosesan data, manajemen file, dan streaming untuk platform Jarchive berbasis MVC.</p>
+  <p>
+    <a href="https://github.com/siJarchive/jarchive-infrastructure">Infrastructure</a> | 
+    <a href="https://github.com/siJarchive/jarchive-frontend">Frontend</a>
+  </p>
+</div>
 
-Backend ini berfungsi sebagai layanan pemrosesan data, manajemen file, dan streaming untuk platform JArchive. Dibangun menggunakan Node.js, Express, dan MongoDB dengan arsitektur MVC (Model-View-Controller).
+![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white)
+![Express.js](https://img.shields.io/badge/Express.js-4.x-000000?logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-6.x-47A248?logo=mongodb&logoColor=white)
+
+## Fitur
+
+| Fitur | Deskripsi |
+| --- | --- |
+| Manajemen File | Mengelola unggahan file lokal dan sistem pembuatan versi (versioning) menggunakan Multer. |
+| Streaming Media | Mendukung streaming video secara langsung menggunakan metode HTTP Range Requests. |
+| Autentikasi | Menerapkan JSON Web Token (JWT) untuk kontrol akses berbasis peran (Guru dan Siswa). |
+| Pencatatan (Logging) | Mencatat setiap aktivitas krusial seperti pengunduhan file dan modifikasi data. |
+| Approval System | Mengelola status permintaan persetujuan aset (upload/update) dari pengguna dengan peran Siswa. |
+
+## Konsep dan Arsitektur
+
+Backend ini mengimplementasikan pola arsitektur Model-View-Controller (MVC) murni untuk pemisahan logika aplikasi.
+
+```text
++----------------+      +-------------------+      +------------------+
+|   Client       | <--> |   Routes (API)    | <--> |   Controllers    |
++----------------+      +-------------------+      +------------------+
+                                                             |
+                                                             v
+                                                   +------------------+
+                                                   |     Models       |
+                                                   |  (Mongoose ORM)  |
+                                                   +------------------+
+                                                             |
+                                                             v
+                                                   +------------------+
+                                                   |  MongoDB Server  |
+                                                   +------------------+
+
+```
+
+## Prasyarat
+
+| Komponen | Spesifikasi / Versi | Keterangan |
+| --- | --- | --- |
+| Node.js | >= 18.x | Diperlukan sebagai runtime server |
+| npm | >= 9.x | Package manager untuk dependensi |
+| MongoDB | >= 6.x | Diperlukan sebagai instance database lokal/remote |
+
+## Instalasi
+
+1. Kloning repositori dan masuk ke dalam direktori:
+
+```bash
+git clone [https://github.com/siJarchive/jarchive-backend.git](https://github.com/siJarchive/jarchive-backend.git)
+cd jarchive-backend
+
+```
+
+2. Instal seluruh dependensi yang dibutuhkan:
+
+```bash
+npm install
+
+```
+
+## Konfigurasi
+
+Salin `.env.example` menjadi `.env` dan atur nilai variabel lingkungan berikut. Variabel ini selaras dengan konfigurasi pada repository infrastruktur.
+
+| Variabel Lingkungan | Status | Default | Deskripsi |
+| --- | --- | --- | --- |
+| `BACKEND_PORT` | Wajib | 5000 | Port host untuk menjalankan server Express. |
+| `MONGO_URI` | Wajib | - | String koneksi database MongoDB (contoh: `mongodb://root:password@localhost:27017/jarchive?authSource=admin`). |
+| `JWT_SECRET` | Wajib | - | Kunci kriptografi statis untuk menandatangani dan memvalidasi token JWT. |
+| `ADMIN_USER` | Wajib | - | Identitas login untuk peran otorisasi Guru. |
+| `ADMIN_PASS` | Wajib | - | Kredensial login untuk peran otorisasi Guru. |
+| `SISWA_USER` | Wajib | - | Identitas login untuk peran otorisasi Siswa. |
+| `SISWA_PASS` | Wajib | - | Kredensial login untuk peran otorisasi Siswa. |
 
 ## Struktur Direktori
 
-* **src/config**: Konfigurasi koneksi database Mongoose.
-* **src/controllers**: Logika utama penanganan request API.
-* **src/models**: Definisi skema data untuk MongoDB.
-* **src/routes**: Definisi jalur endpoint API.
-* **src/middleware**: Penanganan upload file menggunakan Multer.
-* **src/utils**: Fungsi pembantu seperti manajemen folder dan format data.
-* **server.js**: File utama untuk menjalankan aplikasi.
+| Direktori/File | Fungsi |
+| --- | --- |
+| `src/config/` | Inisialisasi dan konfigurasi koneksi database Mongoose. |
+| `src/controllers/` | Logika utama dan pemrosesan dari setiap endpoint API. |
+| `src/middleware/` | Interseptor request seperti validasi token dan konfigurasi disk storage Multer. |
+| `src/models/` | Definisi skema data dan model untuk eksekusi query MongoDB. |
+| `src/routes/` | Pemetaan path URL ke fungsi controller yang relevan. |
+| `src/utils/` | Fungsi pembantu (helper) modular seperti format tanggal atau manipulasi direktori. |
+| `server.js` | Titik masuk (entry point) utama untuk mengeksekusi aplikasi. |
 
-## Variabel Lingkungan (.env)
-
-Konfigurasi backend bergantung pada variabel berikut yang didefinisikan dalam file `.env` di folder infrastruktur:
-
-* **BACKEND_PORT**: Port internal (default: 5000).
-* **MONGO_URI**: String koneksi database (contoh: `mongodb://root:password@mongo:27017/jarchive?authSource=admin`).
-* **JWT_SECRET**: Kunci rahasia untuk tanda tangan token keamanan.
-* **ADMIN_USER / ADMIN_PASS**: Kredensial untuk akses akun Guru.
-* **SISWA_USER / SISWA_PASS**: Kredensial untuk akses akun Siswa.
-
-## Instalasi dan Menjalankan Aplikasi
-
-### Melalui Docker (Rekomendasi)
-Backend ini dikonfigurasi untuk berjalan di dalam container melalui `docker-compose.yml` pada folder infrastruktur.
-1. Pindah ke folder infrastruktur.
-2. Jalankan perintah:
-```bash
-docker compose up -d --build
-```
-
-### Melalui Node.js Lokal
-1. Instal dependensi:
-```bash
-npm install
-```
-2. Jalankan server:
-```bash
-npm start
-```
-
-## Daftar Endpoint API
+## Referensi API
 
 ### Autentikasi
-* **POST /api/login**: Melakukan verifikasi kredensial dan mengembalikan JWT.
+
+* `POST /api/auth/login`: Menghasilkan token JWT berdasarkan validasi kredensial.
 
 ### Manajemen Aset
-* **GET /api/assets**: Mengambil daftar aset dengan dukungan filter kategori, pencarian, dan paginasi.
-* **POST /api/upload**: Mengunggah aset baru (Khusus Admin/Guru).
-* **PUT /api/assets/:id**: Memperbarui metadata atau mengganti file aset. File lama akan dipindahkan ke riwayat versi.
-* **DELETE /api/assets/:id**: Menghapus aset secara permanen dari database dan penyimpanan fisik.
-* **DELETE /api/assets/:id/versions/:versionId**: Menghapus versi lama tertentu dari riwayat aset.
 
-### Sistem Permintaan (Request)
-* **POST /api/requests**: Siswa mengirim permintaan upload atau update file.
-* **GET /api/requests**: Admin melihat daftar permintaan yang masuk.
-* **POST /api/requests/:id/approve**: Admin menyetujui permintaan. File dipindahkan dari folder sementara ke folder aset utama.
-* **POST /api/requests/:id/reject**: Admin menolak permintaan dan menghapus file terkait.
-* **DELETE /api/requests**: Menghapus seluruh data permintaan.
+* `POST /api/assets`: Mengunggah aset baru atau membuat versi baru dari aset yang ada.
+* `GET /api/assets`: Mendapatkan daftar seluruh aset.
+* `GET /api/assets/:id`: Mendapatkan detail spesifik sebuah aset.
+* `DELETE /api/assets/:id`: Menghapus aset beserta riwayat versinya.
+
+### Sistem Permintaan (Requests)
+
+* `GET /api/requests`: Mendapatkan seluruh daftar permintaan.
+* `POST /api/requests`: Membuat entri permintaan unggah atau pembaruan baru (status: *pending*).
+* `POST /api/requests/:id/approve`: Menyetujui permintaan (mengubah file *temporary* menjadi aset permanen).
+* `POST /api/requests/:id/reject`: Menolak permintaan dan menghapus file *temporary* terkait.
+* `DELETE /api/requests/:id`: Menghapus satu data permintaan.
+* `DELETE /api/requests`: Menghapus seluruh data permintaan sekaligus.
 
 ### Layanan File dan Log
-* **GET /stream/:filename**: Melakukan streaming file video dengan dukungan range request.
-* **GET /download/:filename**: Mengunduh file dan mencatat aktivitas pengunduhan ke dalam log.
-* **GET /api/logs**: Mengambil riwayat aktivitas sistem.
-* **DELETE /api/logs**: Membersihkan seluruh data log aktivitas.
+
+* `GET /stream/:filename`: Melakukan streaming file media secara *chunked*.
+* `GET /download/:filename`: Menyediakan header disposisi lampiran untuk unduhan dan mencatat entri log.
+* `GET /api/logs`: Menampilkan seluruh histori aktivitas platform.
+* `DELETE /api/logs`: Menghapus keseluruhan entri log aktivitas.
 
 ## Skema Database
 
-### 1. `Asset` (Koleksi Aset Utama)
+Definisi koleksi MongoDB utama yang digunakan oleh sistem.
 
-| Field | Tipe | Deskripsi |
+### 1. Asset Collection
+
+Mengelola metadata dari file yang telah disetujui.
+
+| Field | Tipe Data | Deskripsi |
 | --- | --- | --- |
-| `name` | String | Nama tampilan file. |
-| `category` | String | Kategori (Docs, Video, dll). |
-| `filename` | String | Nama file fisik di folder uploads (timestamp-name). |
-| `originalName` | String | Nama asli file saat diupload user. |
-| `versions` | Array | Riwayat file lama. Berisi: `filename`, `uploadDate`, `size`, `sizeBytes`, dan `versionNumber`. |
+| `name` | String | Nama referensi aset untuk antarmuka. |
+| `category` | String | Pengelompokan tipe aset (contoh: Docs, Video). |
+| `filename` | String | Nama referensi sistem internal di dalam direktori penyimpanan. |
+| `originalName` | String | Nama asli dari klien saat pertama kali diunggah. |
+| `versions` | Array | Riwayat objek versi terdahulu (menyimpan `filename`, `uploadDate`, `size`, `sizeBytes`, `versionNumber`). |
 
-### 2. `Request` (Koleksi Permintaan)
+### 2. Request Collection
 
-| Field | Tipe | Deskripsi |
+Mengelola status transaksional sebelum aset dipublikasikan.
+
+| Field | Tipe Data | Deskripsi |
 | --- | --- | --- |
-| `type` | String | `upload` atau `update`. |
-| `status` | String | `pending`, `approved`, `rejected`. |
-| `tempFilename` | String | Nama file sementara sebelum di-approve. |
-| `studentMessage` | String | Pesan dari siswa. |
-| `targetAssetId` | ObjectId | Referensi ke aset jika tipe adalah update. |
+| `type` | String | Klasifikasi permintaan (`upload` atau `update`). |
+| `status` | String | Posisi siklus hidup saat ini (`pending`, `approved`, `rejected`). |
+| `tempFilename` | String | Nama referensi internal selama status masih *pending*. |
+| `studentMessage` | String | Catatan teks yang disertakan pemohon. |
+| `targetAssetId` | ObjectId | Referensi dinamis ke dokumen koleksi Asset (hanya untuk operasi `update`). |
 
-### 3. `Log` (Koleksi Riwayat)
+## Manajemen dan Operasional
 
-| Field | Tipe | Deskripsi |
-| --- | --- | --- |
-| `action` | String | Jenis aksi (upload, delete, dll). |
-| `detail` | String | Keterangan detail aksi. |
-| `date` | Date | Waktu kejadian. |
+Menjalankan backend pada lingkungan pengembangan (*development*):
+
+```bash
+npm run dev
+
+```
+
+Menjalankan backend pada lingkungan produksi (*production*):
+
+```bash
+npm start
+
+```
+
+*(Catatan: Lingkungan produksi idealnya dijalankan melalui perintah Docker Compose dari repositori infrastruktur).*
